@@ -1,0 +1,15 @@
+# Read about fixtures at http://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+
+one:
+  game: MyString
+  score: 1.5
+  description: MyString
+  image: MyString
+  review_count: 1
+
+two:
+  game: MyString
+  score: 1.5
+  description: MyString
+  image: MyString
+  review_count: 1
