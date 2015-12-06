@@ -1,4 +1,5 @@
 require 'json'
+require 'pry'
 
 def get_users_mean(ratings_array)
   mean_ratings = Hash.new
@@ -34,8 +35,8 @@ def similarity_between(f_user, s_user, mean_ratings)
   f_user.each do |f_key, f_value|
     s_user.each do |s_key, s_value|
       if f_key == s_key && f_key != "user"
-        x = f_value.to_i - f_mean
-        y = s_value.to_i - s_mean
+        x = f_value.to_f - f_mean
+        y = s_value.to_f - s_mean
 
         #puts "f_value = #{f_value}"
         #puts "s_value = #{s_value}"
@@ -55,11 +56,13 @@ def similarity_between(f_user, s_user, mean_ratings)
       end
     end
   end
+
   sim = upper_sum / (Math.sqrt((f_lower_sum)) * Math.sqrt((s_lower_sum)))
   return sim * ([co_rated, 50].min / 50.to_f)
 end
 
 def compute_similarities(ratings_array, mean_ratings)
+  pocet = 0
   pair = Array.new
   similarities_hash = Hash.new
   i = 0
@@ -70,6 +73,8 @@ def compute_similarities(ratings_array, mean_ratings)
       pair = [ratings_array[i]["user"], ratings_array[j]["user"]]
       sim = similarity_between(ratings_array[i], ratings_array[j], mean_ratings)
 
+      #p pocet if pocet % 10 == 0
+      pocet=pocet+1
       if !sim.to_f.nan?
         similarities_hash.store(pair, sim)
       end
@@ -77,7 +82,7 @@ def compute_similarities(ratings_array, mean_ratings)
     end
     i += 1
   end
-  return similarities_hash
+  return similarities_hash.sort_by { |key, value| value }.reverse
 end
 
 def user_standard_deviation(user, mean)
@@ -86,23 +91,24 @@ def user_standard_deviation(user, mean)
 
   user.each do |key, value|
     if key != "user"
-      sum += (value.to_i - mean) ** 2
       #puts "value = #{value}"
+      sum += (value.to_f - mean) ** 2
     end
   end
   var = sum / (user.size - 1)
   return Math.sqrt(var)
 end
 
-def get_z_score(rating, mean)
+def get_z_score(rating, user, mean)
   s_dev = user_standard_deviation(user, mean)
-  return (rating - mean) / s_dev
+  return (rating.to_f - mean) / s_dev
 end
 
 def prediction_for_item(item, user_a, ratings_array, mean_ratings)
   upper_sum = 0
   lower_sum = 0
-  mean = mean_ratings[user_a]
+  username_a = user_a["user"]
+  mean = mean_ratings[username_a]
   s_dev = user_standard_deviation(user_a, mean)
 
   ratings_array.each do |user_b|
@@ -111,21 +117,84 @@ def prediction_for_item(item, user_a, ratings_array, mean_ratings)
     item_rating = user_b[item]
     next if item_rating.nil?
 
-    z_score = get_z_score(item_rating, mean)
+    z_score = get_z_score(item_rating, user_b, mean)
     sim = similarity_between(user_a, user_b, mean_ratings)
     upper_sum += z_score * sim
     lower_sum += sim
+
   end
   return upper_sum / lower_sum * s_dev + mean
 end
 
+def get_most_similar_users(user_str, similarity_hash)
+  count = 0
+  most_similar = Hash.new
+
+  similarity_hash.each do |key, value|
+    if key.include? user_str
+      most_similar.store(key[1], value)
+      count += 1
+    end
+
+    break if count == 50
+  end
+  return most_similar
+end
+
+def find_user(username, ratings_array)
+  ratings_array.each do |x|
+    return x if x["user"] == username
+  end
+end
+
+def get_most_common_items(user_a, most_similar_users, ratings_array)
+  most_common_items = Hash.new
+  most_similar_users.each do |key, value|
+    user_b = find_user(key, ratings_array)
+
+    user_b.each do |key, value|
+      next if key == "user"
+      next if user_a[key].nil?
+
+      item_count = most_common_items[key]
+      item_count = 0 if item_count.nil?
+      item_count += 1
+
+      most_common_items.store(key, item_count)
+    end
+  end
+
+  return most_common_items.sort_by { |key, value| value }.reverse.first(50)
+end
+
+def compute_predictions(most_common_items, user, ratings_array, mean_ratings)
+  predictions = Hash.new
+  most_common_items.each do |key, value|
+    pred = prediction_for_item(key, user, ratings_array, mean_ratings)
+    #p "game = #{key}, pred = #{pred}"
+    next if pred.nan?
+    predictions.store(key, pred)
+  end
+  return predictions.sort_by { |x, y| y }.reverse
+end
+
 class CollaborativeFiltering
-  file = open("C:\\Users\\Juraj\\RubymineProjects\\blog\\ratingsFile")
+  file = open("../../GOOD")
   json = file.read
   ratings_array = JSON.parse(json)
 
   mean_ratings = get_users_mean(ratings_array)
-  puts similarity_between(ratings_array[0], ratings_array[4], mean_ratings)
-  puts compute_similarities(ratings_array, mean_ratings)
-  puts user_standard_deviation(ratings_array[2], mean_ratings)
+  #puts similarity_between(ratings_array[0], ratings_array[4], mean_ratings)
+  similarity_hash = compute_similarities(ratings_array, mean_ratings)
+  #puts user_standard_deviation(ratings_array[0], mean_ratings[ratings_array[0]["user"]])
+
+  ###
+  #test_item = "The Walking Dead: A Telltale Games Series"
+  test_user = ratings_array[1]
+  #p prediction_for_item(test_item, test_user, ratings_array, mean_ratings)
+
+  username = ratings_array[1]["user"]
+  most_similar_users = get_most_similar_users(username, similarity_hash)
+  most_common_items = get_most_common_items(test_user, most_similar_users, ratings_array)
+  p compute_predictions(most_common_items, test_user, ratings_array, mean_ratings)
 end
