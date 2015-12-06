@@ -1,4 +1,4 @@
-class UsersController
+class UsersController < ApplicationController
     def self.populate
     	file = File.read("GOOD")
     	doc = JSON.parse(file)
@@ -24,5 +24,9 @@ class UsersController
     		end
 
     	end
+    end
+
+    def list
+        @users = User.all
     end
 end

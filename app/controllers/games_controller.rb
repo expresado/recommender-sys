@@ -6,7 +6,6 @@ class GamesController < ApplicationController
   def index
     @games = Game.all
   end
-
   # GET /games/1
   # GET /games/1.json
   def show
@@ -61,6 +60,12 @@ class GamesController < ApplicationController
     end
   end
 
+  ### Additional controller methods
+  def list 
+    @games = Game.all
+  end
+
+  ### CLASS METHODS
   def self.populate
     file = File.read("hry")
     doc = JSON.parse(file)

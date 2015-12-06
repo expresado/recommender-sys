@@ -1,9 +1,8 @@
-source 'https://rubygems.org'
+source 'http://rubygems.org'
 
 gem 'shotgun'
 gem 'pg'
 gem 'pry'
-gem 'rake'
 gem 'devise'
 # Bundle edge Rails instead: gem 'rails', github: 'rails/rails'
 gem 'rails', '4.2.4'
@@ -51,4 +50,4 @@ group :development do
 end
 
 # Windows does not include zoneinfo files, so bundle the tzinfo-data gem
-#gem 'tzinfo-data', platforms: [:mingw, :mswin, :x64_mingw, :jruby]
+gem 'tzinfo-data', platforms: [:mingw, :mswin, :x64_mingw, :jruby]
