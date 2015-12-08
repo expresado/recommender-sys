@@ -58,7 +58,7 @@ def similarity_between(f_user, s_user, mean_ratings)
   end
 
   sim = upper_sum / (Math.sqrt((f_lower_sum)) * Math.sqrt((s_lower_sum)))
-  return sim * ([co_rated, 50].min / 50.to_f)
+  return sim.nan? ? 0 : sim * ([co_rated, 50].min / 50.to_f)
 end
 
 def compute_similarities(ratings_array, mean_ratings)
@@ -101,7 +101,7 @@ end
 
 def get_z_score(rating, user, mean)
   s_dev = user_standard_deviation(user, mean)
-  return (rating.to_f - mean) / s_dev
+  return s_dev == 0 ? 0 : (rating.to_f - mean) / s_dev
 end
 
 def prediction_for_item(item, user_a, ratings_array, mean_ratings)
@@ -123,7 +123,7 @@ def prediction_for_item(item, user_a, ratings_array, mean_ratings)
     lower_sum += sim
 
   end
-  return upper_sum / lower_sum * s_dev + mean
+  return lower_sum == 0 ? 0 : upper_sum / lower_sum * s_dev + mean
 end
 
 def get_most_similar_users(user_str, similarity_hash)
@@ -172,7 +172,7 @@ def compute_predictions(most_common_items, user, ratings_array, mean_ratings)
   most_common_items.each do |key, value|
     pred = prediction_for_item(key, user, ratings_array, mean_ratings)
     #p "game = #{key}, pred = #{pred}"
-    next if pred.nan?
+    next if pred.to_f.nan?
     predictions.store(key, pred)
   end
   return predictions.sort_by { |x, y| y }.reverse
