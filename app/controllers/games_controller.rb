@@ -9,6 +9,7 @@ class GamesController < ApplicationController
   # GET /games/1
   # GET /games/1.json
   def show
+   @game = Game.find(params[:id])
   end
 
   # GET /games/new
@@ -67,10 +68,17 @@ class GamesController < ApplicationController
 
   ### CLASS METHODS
   def self.populate
-    file = File.read("hry")
+    file = File.read("Games-complete")
     doc = JSON.parse(file)
     doc.each do |n|
-      tmp= Game.new("game"=>n,"score"=>0)
+      tmp= Game.new(
+          "game"=>n["game"],
+          "score"=>n["score"],
+          "description"=>n["description"],
+          "tags"=>n["tags"],
+          "publisher"=>n["publisher"],
+          "published"=>n["published"],
+          "image"=>n["image"])
       tmp.save!
       tmp = ""
     end
