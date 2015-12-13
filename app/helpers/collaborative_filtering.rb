@@ -167,7 +167,7 @@ def get_most_common_items(user_a, most_similar_users, ratings_array)
   return most_common_items.sort_by { |key, value| value }.reverse.first(50)
 end
 
-def compute_predictions(most_common_items, user, ratings_array, mean_ratings)
+def predictions_for_user(most_common_items, user, ratings_array, mean_ratings)
   predictions = Hash.new
   most_common_items.each do |key, value|
     pred = prediction_for_item(key, user, ratings_array, mean_ratings)
@@ -178,23 +178,30 @@ def compute_predictions(most_common_items, user, ratings_array, mean_ratings)
   return predictions.sort_by { |x, y| y }.reverse
 end
 
-class CollaborativeFiltering
+def get_ratings_array()
   file = open("../../GOOD")
   json = file.read
-  ratings_array = JSON.parse(json)
+  return JSON.parse(json)
+end
 
+def compute_predictions()
+  ratings_array = get_ratings_array()
   mean_ratings = get_users_mean(ratings_array)
-  #puts similarity_between(ratings_array[0], ratings_array[4], mean_ratings)
   similarity_hash = compute_similarities(ratings_array, mean_ratings)
-  #puts user_standard_deviation(ratings_array[0], mean_ratings[ratings_array[0]["user"]])
 
-  ###
-  #test_item = "The Walking Dead: A Telltale Games Series"
-  test_user = ratings_array[1]
-  #p prediction_for_item(test_item, test_user, ratings_array, mean_ratings)
+  predictions_all = Hash.new
+  ratings_array.each do |user|
+    username = user["user"]
+    most_similar_users = get_most_similar_users(username, similarity_hash)
+    most_common_items = get_most_common_items(user, most_similar_users, ratings_array)
+    predictions = predictions_for_user(most_common_items, user, ratings_array, mean_ratings)
+    predictions_all.store(username, predictions)
+  end
 
-  username = ratings_array[1]["user"]
-  most_similar_users = get_most_similar_users(username, similarity_hash)
-  most_common_items = get_most_common_items(test_user, most_similar_users, ratings_array)
-  p compute_predictions(most_common_items, test_user, ratings_array, mean_ratings)
+  file = File.open("../../predictions_cf", "w")
+  file.write(predictions_all)
+end
+
+class CollaborativeFiltering
+  compute_predictions
 end
