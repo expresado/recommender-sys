@@ -72,11 +72,13 @@ def idf_for_all_words(games_array)
   games_array.each do |game|
     words = game["description"].split(" ").delete_if {|el| el.length < 3}.each {|el| el.gsub!(/\W+/, '')}
     words.each do |word|
+      word.downcase!
       next if idfs.has_key?(word)
       idf = inverse_document_frequency(word, games_array)
-      idfs.store(word.downcase, idf)
+      idfs.store(word, idf)
     end
   end
+
   return idfs
 end
 
@@ -94,11 +96,11 @@ def tfidf_vector(vector, idfs, description)
   file.write(idfs)
 
   vector.each do |word|
-    idf = idfs[word]
+    idf = idfs[word.downcase]
 
-    p word
-    p term_frequency(word, description)
-    p idf
+    #p word
+    #p term_frequency(word, description)
+    #p idf
 
     tfidf = term_frequency(word, description) * idf
     vector_tfidf.store(word, tfidf)
@@ -106,12 +108,12 @@ def tfidf_vector(vector, idfs, description)
   return vector_tfidf
 end
 
-def vector_norm(vector)
+def vector_norm(vector_tfidf)
   sum = 0
-  vector.each do |x|
-    sum += x ** 2
+  vector_tfidf.each do |key, value|
+    sum += value ** 2
   end
-  return Math.sqrt(result)
+  return Math.sqrt(sum)
 end
 
 def cosine_similarity(user_vector, game_vector)
@@ -149,6 +151,7 @@ def predictions_for_user(user, idfs, games_array)
     game_tfidf_vector = tfidf_vector(game_vector, idfs, desc)
     keywords_sim = cosine_similarity(user_tfidf_vector, game_tfidf_vector)
     pred = tags_sim[game_name] * 3 + keywords_sim
+    pred = 0 if pred.nan?
     predictions.store(game_name, pred)
   end
 
