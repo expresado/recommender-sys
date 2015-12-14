@@ -26,33 +26,31 @@ end
 
 def compute_tags_similarity(games_array, user_profile)
   tags_sim = Hash.new
+  user_tags = user_profile["tags"]
 
   games_array.each do |game|
     game_tags = game["tags"]
-    user_tags = user_profile["tags"]
 
     dice_coeff = dice_coefficient(game_tags, user_tags)
-    key = [user_profile["user"], game["game"]]
+    key = game["game"]
     tags_sim.store(key, dice_coeff)
   end
   return tags_sim
 end
 
 def term_count(term, description)
-  return 0 if description.nil?
+  return 0 if description.nil? || description.empty?
 
   count = 0
   words = description.split
   words.each do |word|
     count += 1 if word.downcase == term.downcase
-    #p word
-    #p term
   end
   return count
 end
 
 def contains_term(term, description)
-  return false if description.nil?
+  return false if description.nil? || description.empty?
 
   words = description.split
   words.each do |word|
@@ -93,14 +91,16 @@ end
 def tfidf_vector(words, idfs, description)
   vector_tfidf = Hash.new
 
-  #p idfs
+  ### to remove
+  file = File.open("../../idfs", "w")
+  file.write(idfs)
 
   words.each do |word|
     idf = idfs[word]
 
-    #p word
-    #p term_frequency(word, description)
-    #p idf
+    p word
+    p term_frequency(word, description)
+    p idf
 
     tfidf = term_frequency(word, description) * idf
     vector_tfidf.store(word, tfidf)
@@ -138,10 +138,10 @@ def open_file(path)
   return JSON.parse(json)
 end
 
-def predictions_for_user(user, games_array)
+def predictions_for_user(user, idfs, games_array)
   predictions = Hash.new
   user_vector = user["keywords"]
-  idfs = idf_for_all_words(games_array)
+  tags_sim = compute_tags_similarity(games_array, user)
 
   games_array.each do |game|
     game_name = game["game"]
@@ -150,22 +150,22 @@ def predictions_for_user(user, games_array)
     user_tfidf_vector = tfidf_vector(user_vector, idfs, desc)
     game_tfidf_vector = tfidf_vector(game_vector, idfs, desc)
     keywords_sim = cosine_similarity(user_tfidf_vector, game_tfidf_vector)
-    tags_sim = compute_tags_similarity(games_array, user)
-    pred = tags_sim * 3 + keywords_sim
+    pred = tags_sim[game_name] * 3 + keywords_sim
     predictions.store(game_name, pred)
   end
 
-  return predictions
+  return predictions.sort_by { |key, value| value }.reverse
 end
 
 def compute_predictions()
   user_profiles = open_file("../../user_profiles")
   games_array = open_file("../../Games-final")
+  idfs = idf_for_all_words(games_array)
 
   predictions_all = Hash.new
   user_profiles.each do |user|
     username = user["user"]
-    pred = predictions_for_user(user, games_array)
+    pred = predictions_for_user(user, idfs, games_array)
     predictions_all.store(username, pred)
   end
 
