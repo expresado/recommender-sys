@@ -38,12 +38,9 @@ def compute_tags_similarity(games_array, user_profile)
   return tags_sim
 end
 
-def term_count(term, description)
-  return 0 if description.nil? || description.empty?
-
+def term_count(term, vector)
   count = 0
-  words = description.split
-  words.each do |word|
+  vector.each do |word|
     count += 1 if word.downcase == term.downcase
   end
   return count
@@ -52,7 +49,7 @@ end
 def contains_term(term, description)
   return false if description.nil? || description.empty?
 
-  words = description.split
+  words = description.split(" ").delete_if {|el| el.length < 3}.each {|el| el.gsub!(/\W+/, '')}
   words.each do |word|
     return true if word.downcase == term.downcase
   end
@@ -73,7 +70,7 @@ def idf_for_all_words(games_array)
   idfs = Hash.new
 
   games_array.each do |game|
-    words = game["description"].split
+    words = game["description"].split(" ").delete_if {|el| el.length < 3}.each {|el| el.gsub!(/\W+/, '')}
     words.each do |word|
       next if idfs.has_key?(word)
       idf = inverse_document_frequency(word, games_array)
@@ -85,17 +82,18 @@ end
 
 def term_frequency(term, description)
   return 0 if description.nil? || description.empty?
-  return term_count(term, description) / description.size.to_f
+  vector_desc = description.split(" ").delete_if {|el| el.length < 3}.each {|el| el.gsub!(/\W+/, '')}
+  return term_count(term, vector_desc) / vector_desc.size.to_f
 end
 
-def tfidf_vector(words, idfs, description)
+def tfidf_vector(vector, idfs, description)
   vector_tfidf = Hash.new
 
   ### to remove
   file = File.open("../../idfs", "w")
   file.write(idfs)
 
-  words.each do |word|
+  vector.each do |word|
     idf = idfs[word]
 
     p word
@@ -146,7 +144,7 @@ def predictions_for_user(user, idfs, games_array)
   games_array.each do |game|
     game_name = game["game"]
     desc = game["description"]
-    game_vector = desc.split
+    game_vector = desc.split(" ").delete_if {|el| el.length < 3}.each {|el| el.gsub!(/\W+/, '')}
     user_tfidf_vector = tfidf_vector(user_vector, idfs, desc)
     game_tfidf_vector = tfidf_vector(game_vector, idfs, desc)
     keywords_sim = cosine_similarity(user_tfidf_vector, game_tfidf_vector)
