@@ -139,6 +139,8 @@ def open_file(path)
 end
 
 def predictions_for_user(user, idfs, games_array)
+  count = 0
+
   predictions = Hash.new
   user_vector = user["keywords"]
   tags_sim = compute_tags_similarity(games_array, user)
@@ -153,6 +155,9 @@ def predictions_for_user(user, idfs, games_array)
     pred = tags_sim[game_name] * 3 + keywords_sim
     pred = 0 if pred.nan?
     predictions.store(game_name, pred)
+
+    count += 1
+    p count if count % 50 == 0
   end
 
   return predictions.sort_by { |key, value| value }.reverse
