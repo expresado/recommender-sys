@@ -16,6 +16,10 @@ def get_users_mean(ratings_array)
     mean = sum / (keys.size.to_f - 1)
     mean_ratings.store(user, mean)
   end
+
+  file = File.open("../../user_means", "w")
+  file.write(mean_ratings)
+
   return mean_ratings
 end
 
