@@ -205,7 +205,7 @@ def compute_predictions()
   end
 
   file = File.open("../../predictions_cf", "w")
-  file.write(predictions_all)
+  file.write(predictions_all.to_json)
   file.close
 end
 

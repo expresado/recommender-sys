@@ -88,7 +88,8 @@ def idf_for_all_words(games_array)
   end
 
   file = File.open("../../idfs", "w")
-  file.write(idfs)
+  file.write(idfs.to_json)
+  file.close
 
   return idfs
 end
@@ -185,7 +186,8 @@ def compute_predictions()
   end
 
   file = File.open("../../predictions_cb", "w")
-  file.write(predictions_all)
+  file.write(predictions_all.to_json)
+  file.close
 end
 
 class ContentBasedFiltering
