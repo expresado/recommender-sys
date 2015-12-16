@@ -191,6 +191,5 @@ def compute_predictions()
 end
 
 class ContentBasedFiltering
-  idf_for_all_words(open_file("../../Games-final"))
-  #compute_predictions
+  compute_predictions
 end
