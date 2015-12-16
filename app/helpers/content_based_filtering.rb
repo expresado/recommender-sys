@@ -57,10 +57,17 @@ def contains_term(term, description)
 end
 
 def inverse_document_frequency(term, games_array)
+  #todo: delete control variable
+  count = 0
+
   docs_with_t = 0
   games_array.each do |game|
     desc = game["description"]
     docs_with_t += 1 if contains_term(term, desc)
+
+    #todo: delete control print
+    count += 1
+    p count if count % 50 == 0
   end
   docs_all = games_array.size
   return docs_with_t > 0 ? Math.log(docs_all / docs_with_t) : 0
@@ -70,6 +77,7 @@ def idf_for_all_words(games_array)
   idfs = Hash.new
 
   games_array.each do |game|
+    next if game["description"].nil? || game["description"].empty?
     words = game["description"].split(" ").delete_if {|el| el.length < 3}.each {|el| el.gsub!(/\W+/, '')}
     words.each do |word|
       word.downcase!
@@ -78,6 +86,9 @@ def idf_for_all_words(games_array)
       idfs.store(word, idf)
     end
   end
+
+  file = File.open("../../idfs", "w")
+  file.write(idfs)
 
   return idfs
 end
@@ -90,10 +101,6 @@ end
 
 def tfidf_vector(vector, idfs, description)
   vector_tfidf = Hash.new
-
-  ### to remove
-  file = File.open("../../idfs", "w")
-  file.write(idfs)
 
   vector.each do |word|
     idf = idfs[word.downcase]
@@ -139,6 +146,7 @@ def open_file(path)
 end
 
 def predictions_for_user(user, idfs, games_array)
+  #todo: delete control variable
   count = 0
 
   predictions = Hash.new
@@ -152,10 +160,11 @@ def predictions_for_user(user, idfs, games_array)
     user_tfidf_vector = tfidf_vector(user_vector, idfs, desc)
     game_tfidf_vector = tfidf_vector(game_vector, idfs, desc)
     keywords_sim = cosine_similarity(user_tfidf_vector, game_tfidf_vector)
-    pred = tags_sim[game_name] * 3 + keywords_sim
+    pred = tags_sim[game_name] + keywords_sim * 0.5
     pred = 0 if pred.nan?
     predictions.store(game_name, pred)
 
+    #todo: delete control print
     count += 1
     p count if count % 50 == 0
   end
@@ -166,7 +175,7 @@ end
 def compute_predictions()
   user_profiles = open_file("../../user_profiles")
   games_array = open_file("../../Games-final")
-  idfs = idf_for_all_words(games_array)
+  idfs = open_file("../../idfs")
 
   predictions_all = Hash.new
   user_profiles.each do |user|
@@ -180,5 +189,6 @@ def compute_predictions()
 end
 
 class ContentBasedFiltering
-  compute_predictions
+  idf_for_all_words(open_file("../../Games-final"))
+  #compute_predictions
 end
