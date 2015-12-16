@@ -18,7 +18,8 @@ def get_users_mean(ratings_array)
   end
 
   file = File.open("../../user_means", "w")
-  file.write(mean_ratings)
+  file << mean_ratings.to_json
+  file.close
 
   return mean_ratings
 end
@@ -185,6 +186,7 @@ end
 def get_ratings_array()
   file = open("../../GOOD")
   json = file.read
+  file.close
   return JSON.parse(json)
 end
 
@@ -204,8 +206,10 @@ def compute_predictions()
 
   file = File.open("../../predictions_cf", "w")
   file.write(predictions_all)
+  file.close
 end
 
 class CollaborativeFiltering
+  binding.pry
   compute_predictions
 end
